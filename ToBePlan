@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Future Delivery Manager Responsibilities</title>
+
+  <!-- SheetJS (XLSX) for optional dynamic Excel parsing -->
+  https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
+
+  <style>
+    :root {
+      --primary: #004080;
+      --secondary: #0a6cff;
+      --bg: #f7f9fc;
+      --nav-bg: #eef3f9;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #e6efff;
+      --border: #d1d5db;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--text); background: var(--bg); }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; background: var(--primary); color: #fff;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .header-title { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+    .header-title .user { font-weight: 700; font-size: 18px; }
+    .header-title .app { font-weight: 500; font-size: 16px; opacity: 0.9; }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .file-input {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fff; color: var(--primary); border-radius: 6px; padding: 6px 10px;
+      border: 1px solid #fff; cursor: pointer; transition: box-shadow 0.2s ease;
+    }
+    .file-input:hover { box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    .file-input input { display: none; }
+
+    .container { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 58px); }
+    nav { background: var(--nav-bg); border-right: 1px solid var(--border); padding: 16px; }
+    .nav-group { display: grid; gap: 10px; }
+    .button {
+      width: 100%; padding: 10px 12px; background: #fff; color: var(--primary);
+      border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: 600;
+      text-align: left; transition: background 0.2s ease, transform 0.02s ease-in;
+    }
+    .button:hover { background: var(--accent); }
+    .button:active { transform: scale(0.99); }
+    .button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .content { padding: 20px; display: grid; gap: 18px; }
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+    .tab {
+      padding: 8px 12px; border: 1px solid var(--border); background: #fff; border-radius: 999px;
+      cursor: pointer; color: var(--muted); font-weight: 600;
+    }
+    .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: grid; gap: 18px; }
+
+    /* Top section: Delivery Manager Value */
+    .value-section { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .value-header { font-weight: 700; margin-bottom: 10px; color: var(--primary); }
+    .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .value-col { border: 1px dashed var(--border); border-radius: 10px; padding: 12px; min-height: 180px; background: #fdfefe; }
+    .value-col h3 {
+      margin: 0 0 8px; font-size: 15px; color: var(--text);
+      border-bottom: 1px solid var(--border); padding-bottom: 6px;
+    }
+    .task-item {
+      background: #f7fbff; border: 1px solid #dbeafe; color: #1e3a8a;
+      padding: 6px 8px; border-radius: 6px; margin: 6px 0;
+      display: flex; align-items: center; gap: 6px; font-size: 13px;
+    }
+    .tag {
+      font-size: 11px; padding: 2px 6px; border-radius: 999px;
+      border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3;
+    }
+
+    /* Bottom plan section */
+    .plan-section { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .plan-section h3 { margin: 0 0 8px; color: var(--primary); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
+    thead th { background: #eef2ff; color: #1e293b; border: 1px solid var(--border); padding: 10px; font-size: 13px; }
+    tbody td { border: 1px solid var(--border); padding: 10px; font-size: 13px; vertical-align: top; }
+    td[contenteditable] { background: #fcfdff; outline: none; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* Forms */
+    .form-inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .input { flex: 1; min-width: 220px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; }
+    .input:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px #e6f0ff; }
+    .pill { padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--text); }
+    .helper { font-size: 12px; color: var(--muted); }
+
+    .toast {
+      display: none; position: fixed; bottom: 16px; right: 16px;
+      background: #111827; color: #fff; padding: 10px 12px; border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100;
+    }
+    .toast.show { display: block; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .value-grid { grid-template-columns: 1fr; }
+      .container { grid-template-columns: 1fr; }
+      nav { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-title">
+      <div class="user" id="userName">Vidya Ramachandran</div>
+      <div class="app">Future Delivery Manager Dashboard</div>
+    </div>
+    <div class="header-actions">
+      <label class="file-input">
+        <span>Upload Excel (WebDevInput.xlsx)</span>
+        <input type="file" id="excelInput" accept=".xlsx,.xls"/>
+      </label>
+      <button class="button primary" id="reloadButton" title="Reload from LocalStorage">Reload</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav>
+      <div class="nav-group">
+        <button class="button" onclick="showTab('as-is')">AS-IS activities value analysis</button>
+        <button class="button" onclick="showTab('to-be')">To-Be activities mapping</button>
+        <button class="button" onclick="showTab('skills')">Future Ready New Skill Needs</button>
+        <button class="button" onclick="showTab('assistant')">Assistant and Tools</button>
+      </div>
+    </nav>
+
+    <main class="content">
+      <!-- Quick tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="showTab('as-is')">As-Is</div>
+        <div class="tab" onclick="showTab('to-be')">To-Be</div>
+        <div class="tab" onclick="showTab('skills')">Future Skills</div>
+        <div class="tab" onclick="showTab('assistant')">Assistant & Tools</div>
+      </div>
+
+      <!-- AS-IS TAB -->
+      <section id="as-is" class="tab-content active">
+        <div class="value-section">
+          <div class="value-header">Delivery Manager Value — As-Is</div>
+          <div class="value-grid">
+            <div class="value-col">
+              <h3>Customer</h3>
+              <div id="asIsCustomer" class="task-list"></div>
+            </div>
+            <div class="value-col">
+              <h3>CT (CitiusTech)</h3>
+              <div id="asIsCT" class="task-list"></div>
+            </div>
+            <div class="value-col">
+              <h3>Teams</h3>
+              <div id="asIsTeams" class="task-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-inline">
+          <input type="text" id="newTask" class="input" placeholder="Add new As-Is task"/>
+          <button class="button primary" onclick="addTask()">Submit</button>
+          <span class="helper">New tasks are auto-categorized and saved locally.</span>
+        </div>
+
+        <div>
+          <strong>Submitted Tasks (session):</strong>
+          <div id="submittedTasks" class="pill"></div>
+        </div>
+      </section>
+
+      <!-- TO-BE TAB -->
+      <section id="to-be" class="tab-content">
+        <div class="value-section">
+          <div class="value-header">Delivery Manager Value — To-Be</div>
+          <div class="value-grid">
+            <div class="value-col">
+              <h3>Customer</h3>
+              <div id="toBeCustomer" class="task-list"></div>
+            </div>
+            <div class="value-col">
+              <h3>CT (CitiusTech)</h3>
+              <div id="toBeCT" class="task-list"></div>
+            </div>
+            <div class="value-col">
+              <h3>Teams</h3>
+              <div id="toBeTeams" class="task-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="plan-section">
+          <h3>My Value Realization Plan</h3>
+          <table id="vrpTable">
+            <thead>
+              <tr>
+                <th>Timeline</th>
+                <th>Process Maps</th>
+                <th>AI Solutions</th>
+                <th>Customer Engagements</th>
+                <th>Employee Engagements</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Dec</td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+              </tr>
+              <tr>
+                <td>Jan</td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+              </tr>
+              <tr>
+                <td>Feb</td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+              </tr>
+              <tr>
+                <td>Mar</td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+                <td contenteditable></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="actions">
+            <button class="button primary" onclick="savePlan()">Save</button>
+            <button class="button" onclick="downloadPlan()">Download</button>
+            <span class="helper">Save stores the plan in your browser; Download exports the plan as a .txt file.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- FUTURE SKILLS TAB -->
+      <section id="skills" class="tab-content">
+        <div class="value-section">
+          <div class="value-header">Future Ready New Skills</div>
+          <div class="form-inline" style="flex-direction:column; align-items:stretch; gap:10px;">
+            <input type="text" class="input" id="skill1" placeholder="Skill 1"/>
+            <input type="text" class="input" id="skill2" placeholder="Skill 2"/>
+            <input type="text" class="input" id="skill3" placeholder="Skill 3"/>
+            <input type="text" class="input" id="skill4" placeholder="Skill 4"/>
+            <input type="text" class="input" id="skill5" placeholder="Skill 5"/>
+            <div class="actions">
+              <button class="button primary" onclick="saveSkills()">Save</button>
+              <span class="helper">Your skills are saved in the browser and can be edited anytime.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ASSISTANT & TOOLS TAB -->
+      <section id="assistant" class="tab-content">
+        <div class="value-section">
+          <div class="value-header">Assistant & Tools</div>
+          <div style="display:grid; gap:12px;">
+            <div class="pill">🧠 Suggestion: Use To‑Be items to seed your Dec–Mar plan (e.g., “AI generated status reporting” → Dec AI Solutions).</div>
+            <div class="pill">📈 Tip: Create a weekly cadence to review “Auditable SDLC” adoption and link with Customer Engagements milestones.</div>
+            <div class="pill">🛠️ Tooling (placeholder): Integrate with JIRA/Confluence exports and governance scorecards.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ======= Embedded data from WebDevInput.xlsx (3 sheets) =======
+    // Mapping: As‑Is ← "Current Task"; To‑Be ← "To-Be state"; Categories ← sheet names: Customer, CitiusTech, Teams. (Multi-line To‑Be split) [1](https://onlinect-my.sharepoint.com/personal/vidya_ramachandran_citiustech_com/_layouts/15/Doc.aspx?sourcedoc=%7B6015AA1E-96B6-46C0-ADA3-84C7D68D6A3B%7D&file=WebDevInput.xlsx&action=default&mobileredirect=true)
+    const EMBEDDED = {
+      asIs: {
+        Customer: [
+          "Lead Delivery for multiple accounts",
+          "Advise clients on strategic AI initiatives wth support from practice",
+          "Dashboards, kick off decks",
+          "Drive innovation with help from team",
+          "Customer Escalation",
+          "Customer Engagement"
+        ],
+        CT: [
+          "Contribute to centralized repository of delivery methodologies (Agile, DevOps, Hybrid, AI-augmented SDLC)",
+          "RFP Responses",
+          "Resource Management",
+          "Resource Management",
+          "Quality & Audit process - Manual intensive with multiple cycles of discussions for closure",
+          "Pyramid Optimization",
+          "Margin Optimization - Work with finance for margis, review DMA, derive insights manually"
+        ],
+        Teams: [
+          "Build AI literate and advanced delivery capable teams`",
+          "Internal governance calls",
+          "Approvals",
+          "R&R, Impact Award",
+          "Employee Engagement",
+          "Appraisal"
+        ]
+      },
+      toBe: {
+        Customer: [
+          "Core Delivery Leader with end to end accountability",
+          "Act as a strategic advisor for clients on AI-driven delivery transformation.",
+          "Translate business objectives into AI-enabled delivery roadmaps.",
+          "Ensure measurable business impact through auditable delivery metrics.",
+          "AI generated status reporting",
+          "Continuous improvement and experimentation with autonomous systems",
+          "AI solution to review existing artefacts, DILO for associates and suggest areas of improvement",
+          "Resolution of Customer escalation using AI summarization of timelines, correspondence etc for an initial view",
+          "Customer Engagement"
+        ],
+        CT: [
+          "Upto 40% Automated RFP responses",
+          "Smart Resource Allocation",
+          "Smart Resource Allocation",
+          "Auditable SDLC frameworks with granular task-level traceability and compliance.",
+          "Auto audit - Process for audit against pre-defined artefacts stored in a particular format. The process will be more objective and aligned to the type of engagement",
+          "Auto populated pyramid sheet based on team allocation. Regular reporting on status and proposed changes",
+          "Margin Optimization Insights suggested by AI - Integrate with systems to generate insights"
+        ],
+        Teams: [
+          "AI driven status updates at scheduled times with actionables",
+          "Automated approvals based on predefined conditions",
+          "R&R, Impact Award - AI process to review appreciations logged, evaluate details and suggest top few",
+          "Employee Engagement",
+          "Appraisal"
+        ]
+      }
+    };
+    // Embedded data source: WebDevInput.xlsx (Sheets: Customer, CitiusTech, Teams). [1](https://onlinect-my.sharepoint.com/personal/vidya_ramachandran_citiustech_com/_layouts/15/Doc.aspx?sourcedoc=%7B6015AA1E-96B6-46C0-ADA3-84C7D68D6A3B%7D&file=WebDevInput.xlsx&action=default&mobileredirect=true)
+
+    // ======= Personalization =======
+    const USER_NAME = "Vidya Ramachandran";
+    document.getElementById('userName').textContent = USER_NAME || "User Name";
+
+    // ======= (Optional) Keyword‑based categorization for newly added tasks =======
+    function categorizeTask(text) {
+      const t = (text || "").toLowerCase();
+      const isCustomer = /client|customer|proposal|escalation|engagement/.test(t);
+      const isCT = /internal governance|resource management|approval process|audit|innovation|margin optimization|pyramid optimization|rfp/.test(t);
+      const isTeam = /team|employee|appraisal|r&r|training|r&amp;r|governance/.test(t);
+
+      if (isCustomer) return "Customer";
+      if (isTeam) return "Teams";
+      if (isCT) return "CT";
+      return "CT"; // default
+    }
+
+    // ======= UI Helpers =======
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      const map = { "as-is": "As-Is", "to-be": "To-Be", "skills": "Future Skills", "assistant": "Assistant & Tools" };
+      const activeTabText = map[tabId];
+      document.querySelectorAll('.tab').forEach(t => {
+        if (t.textContent.trim() === activeTabText) t.classList.add('active');
+      });
+    }
+
+    function toast(msg, type="info") {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.background = type === "success" ? "#0f766e" :
+                            type === "warn" ? "#78350f" : "#111827";
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    function createTaskBadge(text, categoryTag) {
+      const div = document.createElement('div');
+      div.className = 'task-item';
+      const safe = escapeHtml(text);
+      const tagText = categoryTag || '';
+      div.innerHTML = tagText ? `<span class="tag">${tagText}</span><span>${safe}</span>` : `<span>${safe}</span>`;
+      return div;
+    }
+
+    function escapeHtml(str) {
+      return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+    }
+
+    // ======= Local Storage Keys =======
+    const LS_KEYS = {
+      asIsByCat: 'dm_asIs_by_cat',
+      toBeByCat: 'dm_toBe_by_cat',
+      plan: 'dm_valuePlan',
+      skills: 'dm_futureSkills'
+    };
+
+    // ======= Render Functions =======
+    function renderBuckets(isAsIs, data) {
+      const targets = isAsIs ? {
+        CustomerEl: document.getElementById('asIsCustomer'),
+        CTEl: document.getElementById('asIsCT'),
+        TeamsEl: document.getElementById('asIsTeams')
+      } : {
+        CustomerEl: document.getElementById('toBeCustomer'),
+        CTEl: document.getElementById('toBeCT'),
+        TeamsEl: document.getElementById('toBeTeams')
+      };
+
+      targets.CustomerEl.innerHTML = '';
+      targets.CTEl.innerHTML = '';
+      targets.TeamsEl.innerHTML = '';
+
+      (data.Customer || []).forEach(t => targets.CustomerEl.appendChild(createTaskBadge(t, 'Customer')));
+      (data.CT || []).forEach(t => targets.CTEl.appendChild(createTaskBadge(t, 'CT')));
+      (data.Teams || []).forEach(t => targets.TeamsEl.appendChild(createTaskBadge(t, 'Teams')));
+    }
+
+    function getPlanDataFromTable() {
+      const rows = Array.from(document.querySelectorAll('#vrpTable tbody tr'));
+      return rows.map(row => {
+        const cells = row.querySelectorAll('td');
+        return {
+          timeline: cells[0].textContent.trim(),
+          processMaps: cells[1].textContent.trim(),
+          aiSolutions: cells[2].textContent.trim(),
+          customerEngagements: cells[3].textContent.trim(),
+          employeeEngagements: cells[4].textContent.trim()
+        };
+      });
+    }
+
+    function setPlanDataToTable(planArray) {
+      const rows = Array.from(document.querySelectorAll('#vrpTable tbody tr'));
+      planArray.forEach((p, idx) => {
+        if (!rows[idx]) return;
+        const cells = rows[idx].querySelectorAll('td');
+        cells[1].textContent = p.processMaps || '';
+        cells[2].textContent = p.aiSolutions || '';
+        cells[3].textContent = p.customerEngagements || '';
+        cells[4].textContent = p.employeeEngagements || '';
+      });
+    }
+
+    // ======= Actions =======
+    function addTask() {
+      const input = document.getElementById('newTask');
+      const text = input.value.trim();
+      if (!text) { toast('Please enter a task.', 'warn'); return; }
+
+      const asIsByCat = JSON.parse(localStorage.getItem(LS_KEYS.asIsByCat) || JSON.stringify(EMBEDDED.asIs));
+      const cat = categorizeTask(text);
+      asIsByCat[cat] = asIsByCat[cat] || [];
+      asIsByCat[cat].push(text);
+      localStorage.setItem(LS_KEYS.asIsByCat, JSON.stringify(asIsByCat));
+
+      renderBuckets(true, asIsByCat);
+
+      const totalCount = (asIsByCat.Customer?.length || 0) + (asIsByCat.CT?.length || 0) + (asIsByCat.Teams?.length || 0);
+      document.getElementById('submittedTasks').textContent = `${totalCount} As-Is task(s) captured`;
+      input.value = '';
+      toast('Task added to As-Is.', 'success');
+    }
+
+    function savePlan() {
+      const plan = getPlanDataFromTable();
+      localStorage.setItem(LS_KEYS.plan, JSON.stringify(plan));
+      toast('Value Realization Plan saved.', 'success');
+    }
+
+    function downloadPlan() {
+      const plan = getPlanDataFromTable();
+      let txt = 'My Value Realization Plan\n';
+      txt += 'Timeline | Process Maps | AI Solutions | Customer Engagements | Employee Engagements\n';
+      txt += '------------------------------------------------------------------------------------\n';
+      plan.forEach(p => {
+        txt += `${p.timeline} | ${p.processMaps} | ${p.aiSolutions} | ${p.customerEngagements} | ${p.employeeEngagements}\n`;
+      });
+
+      const blob = new Blob([txt], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Value_Realization_Plan.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('Plan downloaded.', 'success');
+    }
+
+    function saveSkills() {
+      const skills = [
+        document.getElementById('skill1').value.trim(),
+        document.getElementById('skill2').value.trim(),
+        document.getElementById('skill3').value.trim(),
+        document.getElementById('skill4').value.trim(),
+        document.getElementById('skill5').value.trim()
+      ];
+      localStorage.setItem(LS_KEYS.skills, JSON.stringify(skills));
+      toast('Skills saved.', 'success');
+    }
+
+    // ======= Optional Excel Parsing (SheetJS) for 3-category workbook =======
+    document.getElementById('excelInput').addEventListener('change', handleExcelUpload);
+    function handleExcelUpload(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        try {
+          const workbook = XLSX.read(data, { type: 'array' });
+
+          // Expect sheets named: "Customer", "CitiusTech", "Teams"
+          const expected = ["Customer", "CitiusTech", "Teams"];
+          const asIsByCat = { Customer: [], CT: [], Teams: [] };
+          const toBeByCat = { Customer: [], CT: [], Teams: [] };
+
+          expected.forEach(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+            if (!sheet) return;
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+            rows.forEach(row => {
+              const current = (row['Current Task'] || "").toString().trim();
+              const future = (row['To-Be state'] || "").toString();
+
+              if (current) {
+                if (sheetName === "Customer") asIsByCat.Customer.push(current);
+                else if (sheetName === "CitiusTech") asIsByCat.CT.push(current);
+                else if (sheetName === "Teams") asIsByCat.Teams.push(current);
+              }
+
+              if (future) {
+                future.split(/\n+/).map(s => s.trim()).filter(Boolean).forEach(s => {
+                  if (sheetName === "Customer") toBeByCat.Customer.push(s);
+                  else if (sheetName === "CitiusTech") toBeByCat.CT.push(s);
+                  else if (sheetName === "Teams") toBeByCat.Teams.push(s);
+                });
+              }
+            });
+          });
+
+          localStorage.setItem(LS_KEYS.asIsByCat, JSON.stringify(asIsByCat));
+          localStorage.setItem(LS_KEYS.toBeByCat, JSON.stringify(toBeByCat));
+
+          renderBuckets(true, asIsByCat);
+          renderBuckets(false, toBeByCat);
+
+          const totalCount = (asIsByCat.Customer.length + asIsByCat.CT.length + asIsByCat.Teams.length);
+          document.getElementById('submittedTasks').textContent = `${totalCount} As-Is task(s) loaded`;
+          toast('Excel loaded and tasks populated (3 categories).', 'success');
+        } catch (err) {
+          console.error(err);
+          toast('Failed to parse Excel. Ensure sheets are named Customer, CitiusTech, Teams.', 'warn');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ======= Initial Rendering using embedded data, with LocalStorage override =======
+    function loadFromLocalStorageOrEmbedded() {
+      const asIsByCat = JSON.parse(localStorage.getItem(LS_KEYS.asIsByCat) || JSON.stringify(EMBEDDED.asIs));
+      const toBeByCat = JSON.parse(localStorage.getItem(LS_KEYS.toBeByCat) || JSON.stringify(EMBEDDED.toBe));
+      const plan = JSON.parse(localStorage.getItem(LS_KEYS.plan) || '[]');
+      const skills = JSON.parse(localStorage.getItem(LS_KEYS.skills) || '[]');
+
+      renderBuckets(true, asIsByCat);
+      renderBuckets(false, toBeByCat);
+
+      if (plan && plan.length) setPlanDataToTable(plan);
+
+      // Skills
+      const skillIds = ['skill1','skill2','skill3','skill4','skill5'];
+      skills.forEach((s, i) => {
+        const el = document.getElementById(skillIds[i]);
+        if (el) el.value = s || '';
+      });
+
+      const totalCount = (asIsByCat.Customer.length + asIsByCat.CT.length + asIsByCat.Teams.length);
+      document.getElementById('submittedTasks').textContent = `${totalCount} As-Is task(s) loaded`;
+    }
+
+    document.getElementById('reloadButton').addEventListener('click', loadFromLocalStorageOrEmbedded);
+
+    // Boot
+    loadFromLocalStorageOrEmbedded();
+  </script>
+</body>
+</html>
